@@ -1,7 +1,7 @@
 const fs = require('fs');
 
 // Replace with your real Google Sheets published CSV URL
-const CSV_URL = "YOUR_PUBLISHED_CSV_URL_HERE";
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTe8yftdF5T-d_s7pNTxB6XUf54dTOwRBW1BKP7vyynSAlZbKbCeDnRHRXnSiyMHiWQfvvE0fhUdCIN/pub?output=csv";
 
 async function buildSite() {
     try {
