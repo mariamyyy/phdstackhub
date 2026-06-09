@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Awesome PhD Resources Directory</title>
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --primary: #2563eb;
+            --border: #e2e8f0;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            line-height: 1.5;
+        }
+        header { text-align: center; margin-bottom: 40px; }
+        header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        header p { color: var(--text-muted); font-size: 1.1rem; }
+        .search-container { margin-bottom: 30px; }
+        .search-bar {
+            width: 100%;
+            padding: 14px 20px;
+            font-size: 1rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .search-bar:focus { border-color: var(--primary); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .card { 
+            background: var(--card-bg); 
+            padding: 24px; 
+            border-radius: 8px; 
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .card-content h3 { margin-bottom: 8px; font-size: 1.25rem; }
+        .card-content h3 a { color: var(--primary); text-decoration: none; }
+        .card-content h3 a:hover { text-decoration: underline; }
+        .card-content p { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 16px; }
+        .tag { 
+            align-self: flex-start;
+            background: #dbeafe; 
+            color: var(--primary); 
+            padding: 4px 10px; 
+            border-radius: 4px; 
+            font-size: 0.75rem; 
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .loading { text-align: center; font-size: 1.2rem; color: var(--text-muted); padding: 40px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🎓 Awesome PhD Resources</h1>
+        <p>A high-traffic directory for doctoral researchers.</p>
+    </header>
+
+    <div class="search-container">
+        <input type="text" id="searchInput" class="search-bar" placeholder="Search resources, categories, or keywords...">
+    </div>
+
+    <!-- The template script container used by Phase 2 build automation -->
+    <!-- BUILD_TEMPLATE_START -->
+    <main class="grid" id="resourceGrid">
+        <div class="loading" id="loadingState">Loading resources...</div>
+    </main>
+
+    <script>
+        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTe8yftdF5T-d_s7pNTxB6XUf54dTOwRBW1BKP7vyynSAlZbKbCeDnRHRXnSiyMHiWQfvvE0fhUdCIN/pub?output=csv";
+        const resourceGrid = document.getElementById('resourceGrid');
+        const loadingState = document.getElementById('loadingState');
+        const searchInput = document.getElementById('searchInput');
+        let allResources = [];
+
+        function parseCSV(csvText) {
+            const lines = csvText.split("\n").map(line => line.trim()).filter(line => line.length > 0);
+            const headers = lines[0].split(",").map(h => h.replace(/^"|"$/g, '').trim().toLowerCase());
+            return lines.slice(1).map(line => {
+                const values = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || line.split(",");
+                const cleanValues = values.map(v => v.replace(/^"|"$/g, '').trim());
+                let obj = {};
+                headers.forEach((header, index) => { obj[header] = cleanValues[index] || ""; });
+                return obj;
+            });
+        }
+
+        function renderCards(data) {
+            if(data.length === 0) {
+                resourceGrid.innerHTML = `<p class="loading">No tools found.</p>`;
+                return;
+            }
+            resourceGrid.innerHTML = data.map(item => `
+                <div class="card" data-keywords="${item.keywords || ''}">
+                    <div class="card-content">
+                        <h3><a href="${item.url}" target="_blank">${item.name}</a></h3>
+                        <p>${item.description}</p>
+                    </div>
+                    <span class="tag">${item.category}</span>
+                </div>
+            `).join('');
+        }
+
+        async function loadSheetData() {
+            try {
+                const response = await fetch(SHEET_CSV_URL);
+                const dataText = await response.text();
+                allResources = parseCSV(dataText);
+                if(loadingState) loadingState.remove();
+                renderCards(allResources);
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const filtered = allResources.filter(item => 
+                item.name.toLowerCase().includes(query) ||
+                item.description.toLowerCase().includes(query) ||
+                item.category.toLowerCase().includes(query) ||
+                item.keywords.toLowerCase().includes(query)
+            );
+            renderCards(filtered);
+        });
+
+        loadSheetData();
+    </script>
+    <!-- BUILD_TEMPLATE_END -->
+</body>
+</html>
+
+
