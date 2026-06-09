@@ -1,0 +1,31 @@
+name: Weekly Static Resource Build
+
+on:
+  schedule:
+    # Runs automatically every Monday at 00:00 UTC
+    - cron: '0 0 * * 1'
+  workflow_dispatch: # Allows you to press a button to manually update anytime
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-node: 20
+
+      - name: Execute build injection script
+        run: node build.js
+
+      - name: Commit and push compiled layout
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Automated weekly static layout compile from Sheet assets"
+          file_pattern: 'index.html'
