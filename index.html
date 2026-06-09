@@ -79,70 +79,36 @@
     <!-- The template script container used by Phase 2 build automation -->
     <!-- BUILD_TEMPLATE_START -->
     <main class="grid" id="resourceGrid">
-        <div class="loading" id="loadingState">Loading resources...</div>
+        
+        <div class="card" data-keywords="references, bibliography">
+            <div class="card-content">
+                <h3><a href="https://www.zotero.org/" target="_blank">Zetoro</a></h3>
+                <p>bibliography</p>
+            </div>
+            <span class="tag">management</span>
+        </div>
+        <div class="card" data-keywords="papers">
+            <div class="card-content">
+                <h3><a href="https://www.researchrabbit.ai/" target="_blank">ResearchRabbit</a></h3>
+                <p>Utilizes AI to find, map and visualize research papers</p>
+            </div>
+            <span class="tag">review</span>
+        </div>
     </main>
-
     <script>
-        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTe8yftdF5T-d_s7pNTxB6XUf54dTOwRBW1BKP7vyynSAlZbKbCeDnRHRXnSiyMHiWQfvvE0fhUdCIN/pub?output=csv";
-        const resourceGrid = document.getElementById('resourceGrid');
-        const loadingState = document.getElementById('loadingState');
+        // Static fast search mechanism
         const searchInput = document.getElementById('searchInput');
-        let allResources = [];
-
-        function parseCSV(csvText) {
-            const lines = csvText.split("\n").map(line => line.trim()).filter(line => line.length > 0);
-            const headers = lines[0].split(",").map(h => h.replace(/^"|"$/g, '').trim().toLowerCase());
-            return lines.slice(1).map(line => {
-                const values = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || line.split(",");
-                const cleanValues = values.map(v => v.replace(/^"|"$/g, '').trim());
-                let obj = {};
-                headers.forEach((header, index) => { obj[header] = cleanValues[index] || ""; });
-                return obj;
-            });
-        }
-
-        function renderCards(data) {
-            if(data.length === 0) {
-                resourceGrid.innerHTML = `<p class="loading">No tools found.</p>`;
-                return;
-            }
-            resourceGrid.innerHTML = data.map(item => `
-                <div class="card" data-keywords="${item.keywords || ''}">
-                    <div class="card-content">
-                        <h3><a href="${item.url}" target="_blank">${item.name}</a></h3>
-                        <p>${item.description}</p>
-                    </div>
-                    <span class="tag">${item.category}</span>
-                </div>
-            `).join('');
-        }
-
-        async function loadSheetData() {
-            try {
-                const response = await fetch(SHEET_CSV_URL);
-                const dataText = await response.text();
-                allResources = parseCSV(dataText);
-                if(loadingState) loadingState.remove();
-                renderCards(allResources);
-            } catch (error) {
-                console.error(error);
-            }
-        }
-
+        const cards = document.querySelectorAll('.card');
         searchInput.addEventListener('input', (e) => {
             const query = e.target.value.toLowerCase();
-            const filtered = allResources.filter(item => 
-                item.name.toLowerCase().includes(query) ||
-                item.description.toLowerCase().includes(query) ||
-                item.category.toLowerCase().includes(query) ||
-                item.keywords.toLowerCase().includes(query)
-            );
-            renderCards(filtered);
+            cards.forEach(card => {
+                const keywords = card.getAttribute('data-keywords').toLowerCase();
+                const content = card.textContent.toLowerCase();
+                card.style.display = (keywords.includes(query) || content.includes(query)) ? 'flex' : 'none';
+            });
         });
-
-        loadSheetData();
     </script>
-    <!-- BUILD_TEMPLATE_END -->
+        <!-- BUILD_TEMPLATE_END -->
 </body>
 </html>
 
