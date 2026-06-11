@@ -20,8 +20,18 @@ function parseCSVLine(text) {
 async function buildSite() {
     try {
         console.log("Fetching latest rows from Google Sheets...");
-        const response = await fetch(CSV_URL);
+        
+        // 🚀 CACHE BUSTER: Appends a unique timestamp so Google serves fresh data instantly
+        const cacheBuster = `&t=${Date.now()}`;
+        const finalUrl = CSV_URL.includes('?') ? `${CSV_URL}${cacheBuster}` : `${CSV_URL}?${cacheBuster}`;
+        
+        const response = await fetch(finalUrl);
         const csvText = await response.text();
+        
+        // 🔍 DEBUG LOG: Let's see exactly what Google responded with
+        console.log("--- GOOGLE SHEETS RAW RESPONSE (FIRST 200 CHARS) ---");
+        console.log(csvText.substring(0, 200));
+        console.log("---------------------------------------------------");
         
         // Split by lines and remove structural carriage return markers (\r)
         const lines = csvText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
