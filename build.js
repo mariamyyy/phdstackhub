@@ -59,6 +59,15 @@ async function buildSite() {
             const kw = item.keywords || "";
 
             return `
+
+        <!-- If is_featured is TRUE, your script outputs this structure -->
+        <div class="resource-card featured">
+            <span class="badge">Sponsored</span>
+            <h3>Premium Proofreading Service</h3>
+            <p>Get your dissertation polished by Ivy League editors.</p>
+            <a href="YOUR_AFFILIATE_OR_SPONSOR_URL" class="btn">Visit Site</a>
+        </div>
+
         <div class="card" data-keywords="${kw}">
             <div class="card-content">
                 <h3><a href="${url}" target="_blank">${name}</a></h3>
