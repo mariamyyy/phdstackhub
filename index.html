@@ -83,30 +83,35 @@
         <div class="card" data-keywords="references, bibliography">
             <div class="card-content">
                 <h3><a href="https://www.zotero.org/" target="_blank">Zetoro</a></h3>
-                <p>bibliography</p>
+                <p>edit and keep track of bibliography</p>
             </div>
-            <span class="tag">management</span>
+            <span class="tag">Reference management</span>
         </div>
-        <div class="card" data-keywords="papers">
+        <div class="card" data-keywords="research papers">
             <div class="card-content">
                 <h3><a href="https://www.researchrabbit.ai/" target="_blank">ResearchRabbit</a></h3>
                 <p>Utilizes AI to find, map and visualize research papers</p>
             </div>
-            <span class="tag">review</span>
+            <span class="tag">Literature review</span>
         </div>
     </main>
     <script>
         // Static fast search mechanism
-        const searchInput = document.getElementById('searchInput');
-        const cards = document.querySelectorAll('.card');
-        searchInput.addEventListener('input', (e) => {
-            const query = e.target.value.toLowerCase();
-            cards.forEach(card => {
-                const keywords = card.getAttribute('data-keywords').toLowerCase();
-                const content = card.textContent.toLowerCase();
-                card.style.display = (keywords.includes(query) || content.includes(query)) ? 'flex' : 'none';
-            });
-        });
+        if (!window.searchInitialized) {
+            window.searchInitialized = true;
+            const searchInput = document.getElementById('searchInput');
+            if(searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    const query = e.target.value.toLowerCase();
+                    const cards = document.querySelectorAll('.card');
+                    cards.forEach(card => {
+                        const keywords = (card.getAttribute('data-keywords') || '').toLowerCase();
+                        const content = card.textContent.toLowerCase();
+                        card.style.display = (keywords.includes(query) || content.includes(query)) ? 'flex' : 'none';
+                    });
+                });
+            }
+        }
     </script>
         <!-- BUILD_TEMPLATE_END -->
 </body>
