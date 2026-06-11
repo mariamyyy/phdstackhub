@@ -19,7 +19,7 @@ jobs:
       - name: Setup Node.js environment
         uses: actions/setup-node@v4
         with:
-          node-node: 20
+          node-version: 20
 
       - name: Execute build injection script
         run: node build.js
