@@ -1,7 +1,7 @@
 const fs = require('fs');
 
 // 🚀 Replace with your real Google Sheets published CSV URL
-const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTe8yftdF5T-d_s7pNTxB6XUf54dTOwRBW1BKP7vyynSAlZbKbCeDnRHRXnSiyMHiWQfvvE0fhUdCIN/pub?output=csv";
+const CSV_URL = "YOUR_PUBLISHED_CSV_URL_HERE";
 
 // Clean CSV line parsing engine (Handles quotes and inner commas perfectly)
 function parseCSVLine(text) {
@@ -21,17 +21,12 @@ async function buildSite() {
     try {
         console.log("Fetching latest rows from Google Sheets...");
         
-        // 🚀 CACHE BUSTER: Appends a unique timestamp so Google serves fresh data instantly
+        // CACHE BUSTER: Forces Google to deliver absolute fresh data
         const cacheBuster = `&t=${Date.now()}`;
         const finalUrl = CSV_URL.includes('?') ? `${CSV_URL}${cacheBuster}` : `${CSV_URL}?${cacheBuster}`;
         
         const response = await fetch(finalUrl);
         const csvText = await response.text();
-        
-        // 🔍 DEBUG LOG: Let's see exactly what Google responded with
-        console.log("--- GOOGLE SHEETS RAW RESPONSE (FIRST 200 CHARS) ---");
-        console.log(csvText.substring(0, 200));
-        console.log("---------------------------------------------------");
         
         // Split by lines and remove structural carriage return markers (\r)
         const lines = csvText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
@@ -40,13 +35,20 @@ async function buildSite() {
         const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase());
         console.log(`Detected columns: ${headers.join(', ')}`);
         
-        const resources = lines.slice(1).map(line => {
+        let resources = lines.slice(1).map(line => {
             const cleanValues = parseCSVLine(line);
             let obj = {};
             headers.forEach((header, index) => { 
                 obj[header] = cleanValues[index] || ""; 
             });
             return obj;
+        });
+
+        // 🚀 FEATURED SORT ENGINE: Pushes all items where 'is_featured' is true to the absolute top
+        resources.sort((a, b) => {
+            const aFeatured = (a.is_featured || '').toLowerCase() === 'true';
+            const bFeatured = (b.is_featured || '').toLowerCase() === 'true';
+            return bFeatured - aFeatured; 
         });
 
         // Generate Hardcoded HTML Blocks
@@ -57,18 +59,19 @@ async function buildSite() {
             const desc = item.description || "";
             const cat = item.category || "General";
             const kw = item.keywords || "";
+            
+            // 🚀 CHECK FEATURED STATUS: Safely looks for true values
+            const isFeatured = (item.is_featured || '').toLowerCase() === 'true';
+            
+            // Dynamically build the CSS classes for this card container
+            const cardClasses = isFeatured ? "card featured" : "card";
+            
+            // Inject a physical visual badge markup only if the item is featured
+            const badgeHtml = isFeatured ? `<span class="featured-badge">Sponsored</span>` : "";
 
             return `
-
-        <!-- If is_featured is TRUE, your script outputs this structure -->
-        <div class="resource-card featured">
-            <span class="badge">Sponsored</span>
-            <h3>Premium Proofreading Service</h3>
-            <p>Get your dissertation polished by Ivy League editors.</p>
-            <a href="YOUR_AFFILIATE_OR_SPONSOR_URL" class="btn">Visit Site</a>
-        </div>
-
-        <div class="card" data-keywords="${kw}">
+        <div class="${cardClasses}" data-keywords="${kw}">
+            ${badgeHtml}
             <div class="card-content">
                 <h3><a href="${url}" target="_blank">${name}</a></h3>
                 <p>${desc}</p>
@@ -111,13 +114,13 @@ async function buildSite() {
         const regex = new RegExp(`${targetStart}[\\s\\S]*${targetEnd}`);
         
         if(!regex.test(template)) {
-            throw new Error("Could not find <!-- BUILD_TEMPLATE_START --> and <!-- BUILD_TEMPLATE_END --> structural comments inside your index.html file!");
+            throw new Error("Could not find <!-- BUILD_TEMPLATE_START --> variables in your index.html file!");
         }
 
         const updatedHtml = template.replace(regex, `${targetStart}${staticContent}${targetEnd}`);
         
         fs.writeFileSync('index.html', updatedHtml);
-        console.log("Success: index.html has been clean compiled statically!");
+        console.log("Success: index.html compiled with featured slots on top!");
 
     } catch (err) {
         console.error("Build execution halted: ", err);
