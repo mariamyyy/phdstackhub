@@ -26,23 +26,30 @@ async function buildSite() {
         const finalUrl = CSV_URL.includes('?') ? `${CSV_URL}${cacheBuster}` : `${CSV_URL}?${cacheBuster}`;
         
         const response = await fetch(finalUrl);
-        const csvText = await response.text();
+        let csvText = await response.text();
+        
+        // 🚀 CRITICAL FIX: Strip the invisible Byte Order Mark (\uFEFF) if Google sends it
+        if (csvText.startsWith('\uFEFF')) {
+            csvText = csvText.substring(1);
+        }
         
         // Split by lines and remove structural carriage return markers (\r)
         const lines = csvText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
         if(lines.length < 2) { throw new Error("CSV file looks empty or invalid."); }
 
-        const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase());
-        console.log(`Detected columns: ${headers.join(', ')}`);
+        // Parse headers and scrub any lingering non-alphanumeric whitespace symbols
+        const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().trim().replace(/[^a-z0-9_]/g, ''));
+        console.log(`Scrubbed columns: ${headers.join(', ')}`);
         
         let resources = lines.slice(1).map(line => {
             const cleanValues = parseCSVLine(line);
             let obj = {};
             headers.forEach((header, index) => { 
-                obj[header] = cleanValues[index] || ""; 
+                obj[header] = cleanValues[index] !== undefined ? cleanValues[index] : ""; 
             });
             return obj;
         });
+
 
         // 🚀 FEATURED SORT ENGINE: Pushes all items where 'is_featured' is true to the absolute top
         resources.sort((a, b) => {
