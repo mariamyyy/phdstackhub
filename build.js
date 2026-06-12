@@ -46,7 +46,7 @@ async function buildSite() {
 
         // 🚀 FEATURED SORT ENGINE: Pushes all items where 'is_featured' is true to the absolute top
         resources.sort((a, b) => {
-            const aFeatured = (a.is_featured || '').toLowerCase() === 'false';
+            const aFeatured = (a.is_featured || '').toLowerCase() === 'true';
             const bFeatured = (b.is_featured || '').toLowerCase() === 'true';
             return bFeatured - aFeatured; 
         });
