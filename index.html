@@ -101,8 +101,51 @@
 
     <!-- The template script container used by Phase 2 build automation -->
     <!-- BUILD_TEMPLATE_START -->
-
-    <!-- BUILD_TEMPLATE_END -->
+    <main class="grid" id="resourceGrid">
+        
+        <div class="card featured" data-keywords="references, bibliography">
+            <span class="featured-badge">Featured</span>
+            <div class="card-content">
+                <h3><a href="https://www.mendeley.com/" target="_blank">Mendeley</a></h3>
+                <p>edit and keep track of bibliography</p>
+            </div>
+            <span class="tag">Reference management</span>
+        </div>
+        <div class="card" data-keywords="references, bibliography">
+            
+            <div class="card-content">
+                <h3><a href="https://www.zotero.org/" target="_blank">Zetoro-tool</a></h3>
+                <p>edit and keep track of bibliography</p>
+            </div>
+            <span class="tag">Reference management</span>
+        </div>
+        <div class="card" data-keywords="research papers">
+            
+            <div class="card-content">
+                <h3><a href="https://www.researchrabbit.ai/" target="_blank">ResearchRabbit</a></h3>
+                <p>Utilizes AI to find, map and visualize research papers</p>
+            </div>
+            <span class="tag">Literature review</span>
+        </div>
+    </main>
+    <script>
+        if (!window.searchInitialized) {
+            window.searchInitialized = true;
+            const searchInput = document.getElementById('searchInput');
+            if(searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    const query = e.target.value.toLowerCase();
+                    const cards = document.querySelectorAll('.card');
+                    cards.forEach(card => {
+                        const keywords = (card.getAttribute('data-keywords') || '').toLowerCase();
+                        const content = card.textContent.toLowerCase();
+                        card.style.display = (keywords.includes(query) || content.includes(query)) ? 'flex' : 'none';
+                    });
+                });
+            }
+        }
+    </script>
+        <!-- BUILD_TEMPLATE_END -->
         
     <footer style="text-align: center; padding: 40px 20px; background: #f9fafb;">
     <p>Found these resources helpful?</p>
