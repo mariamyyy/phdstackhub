@@ -3,7 +3,7 @@ const fs = require('fs');
 // 🚀 Replace with your real Google Sheets published CSV URL
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTe8yftdF5T-d_s7pNTxB6XUf54dTOwRBW1BKP7vyynSAlZbKbCeDnRHRXnSiyMHiWQfvvE0fhUdCIN/pub?output=csv";
 
-// Clean CSV line parsing engine (Handles quotes and inner commas perfectly)
+// Clean CSV line parsing engine
 function parseCSVLine(text) {
     let p = '', c = [];
     let q = false;
@@ -21,27 +21,25 @@ async function buildSite() {
     try {
         console.log("Fetching latest rows from Google Sheets...");
         
-        // CACHE BUSTER: Forces Google to deliver absolute fresh data
         const cacheBuster = `&t=${Date.now()}`;
         const finalUrl = CSV_URL.includes('?') ? `${CSV_URL}${cacheBuster}` : `${CSV_URL}?${cacheBuster}`;
         
         const response = await fetch(finalUrl);
         let csvText = await response.text();
         
-        // 🚀 CRITICAL FIX: Strip the invisible Byte Order Mark (\uFEFF) if Google sends it
+        // Strip Byte Order Mark if present
         if (csvText.startsWith('\uFEFF')) {
             csvText = csvText.substring(1);
         }
         
-        // Split by lines and remove structural carriage return markers (\r)
         const lines = csvText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
         if(lines.length < 2) { throw new Error("CSV file looks empty or invalid."); }
 
-        // Parse headers and scrub any lingering non-alphanumeric whitespace symbols
+        // Standardize headers: lowercase and strip out hidden spaces
         const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().trim().replace(/[^a-z0-9_]/g, ''));
-        console.log(`Scrubbed columns: ${headers.join(', ')}`);
+        console.log("Detected Spreadsheet Columns:", headers);
         
-        let resources = lines.slice(1).map(line => {
+        let resources = lines.slice(1).map((line, lineIndex) => {
             const cleanValues = parseCSVLine(line);
             let obj = {};
             headers.forEach((header, index) => { 
@@ -50,31 +48,24 @@ async function buildSite() {
             return obj;
         });
 
-
-        // 🚀 FEATURED SORT ENGINE: Pushes all items where 'is_featured' is true to the absolute top
+        // Sort Engine: Pushes is_featured = TRUE to the top
         resources.sort((a, b) => {
-            const aFeatured = (a.is_featured || '').toLowerCase() === 'true';
-            const bFeatured = (b.is_featured || '').toLowerCase() === 'true';
+            const aFeatured = String(a.is_featured || '').toLowerCase() === 'true';
+            const bFeatured = String(b.is_featured || '').toLowerCase() === 'true';
             return bFeatured - aFeatured; 
         });
 
-        // Generate Hardcoded HTML Blocks
+        // Generate HTML Layout Strings
         const htmlCards = resources.map(item => {
-            // Safety fallbacks to prevent undefined text rendering
             const name = item.name || "Untitled Resource";
             const url = item.url || "#";
             const desc = item.description || "";
             const cat = item.category || "General";
             const kw = item.keywords || "";
             
-            // 🚀 CHECK FEATURED STATUS: Safely looks for true values
-            const isFeatured = (item.is_featured || '').toLowerCase() === 'true';
-            
-            // Dynamically build the CSS classes for this card container
+            const isFeatured = String(item.is_featured || '').toLowerCase() === 'true';
             const cardClasses = isFeatured ? "card featured" : "card";
-            
-            // Inject a physical visual badge markup only if the item is featured
-            const badgeHtml = isFeatured ? `<span class="featured-badge">Sponsored</span>` : "";
+            const badgeHtml = isFeatured ? `<span class="featured-badge">Featured</span>` : "";
 
             return `
         <div class="${cardClasses}" data-keywords="${kw}">
@@ -87,10 +78,8 @@ async function buildSite() {
         </div>`;
         }).join('');
 
-        // Inject inside our layout wrapper
         let template = fs.readFileSync('index.html', 'utf8');
         
-        // Target container replacement bounds
         const targetStart = '<!-- BUILD_TEMPLATE_START -->';
         const targetEnd = '<!-- BUILD_TEMPLATE_END -->';
         
@@ -99,7 +88,6 @@ async function buildSite() {
         ${htmlCards}
     </main>
     <script>
-        // Static fast search mechanism
         if (!window.searchInitialized) {
             window.searchInitialized = true;
             const searchInput = document.getElementById('searchInput');
@@ -119,18 +107,16 @@ async function buildSite() {
         `;
 
         const regex = new RegExp(`${targetStart}[\\s\\S]*${targetEnd}`);
-        
         if(!regex.test(template)) {
-            throw new Error("Could not find <!-- BUILD_TEMPLATE_START --> variables in your index.html file!");
+            throw new Error("Could not find template comments inside index.html!");
         }
 
         const updatedHtml = template.replace(regex, `${targetStart}${staticContent}${targetEnd}`);
-        
         fs.writeFileSync('index.html', updatedHtml);
-        console.log("Success: index.html compiled with featured slots on top!");
+        console.log(`Success: Pre-rendered ${resources.length} resources cleanly.`);
 
     } catch (err) {
-        console.error("Build execution halted: ", err);
+        console.error("Build failed: ", err);
         process.exit(1);
     }
 }
