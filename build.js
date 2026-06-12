@@ -70,11 +70,12 @@ async function buildSite() {
             return `
         <div class="${cardClasses}" data-keywords="${kw}">
             ${badgeHtml}
+            <span class="tag">${cat}</span>
             <div class="card-content">
                 <h3><a href="${url}" target="_blank">${name}</a></h3>
                 <p>${desc}</p>
             </div>
-            <span class="tag">${cat}</span>
+            
         </div>`;
         }).join('');
 
